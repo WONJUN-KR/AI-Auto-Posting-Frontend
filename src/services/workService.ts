@@ -1,0 +1,122 @@
+import api from '@/lib/api';
+import { ApiResponse } from './workflowService';
+
+export interface Work {
+  workId: number;
+  title: string | null;
+  status: 'PENDING' | 'REQUESTED' | 'TREND_KEYWORD_DONE' | 'PRODUCT_SELECTED' |
+  'CONTENT_GENERATED' | 'BLOG_UPLOAD_PENDING' | 'COMPLETED' | 'FAILED';
+  postingUrl: string | null;
+  completedAt: string | null;
+  choiceProduct: string | null;
+}
+
+// 워크 상세 조회 응답 타입 (사용자용)
+export interface WorkDetailResponse {
+  workId: number;
+  status: 'PENDING' | 'REQUESTED' | 'TREND_KEYWORD_DONE' | 'PRODUCT_SELECTED' |
+  'CONTENT_GENERATED' | 'BLOG_UPLOAD_PENDING' | 'COMPLETED' | 'FAILED';
+  postingUrl: string | null;
+  title: string | null;
+  content: string | null;
+  choiceTrendKeyword: string | null;
+  completedAt: string | null;
+  choiceProduct: string | null;
+}
+
+// 관리자용 Work 타입 (추가 필드 포함)
+export interface AdminWork {
+  workId: number;
+  userId: number;
+  workflowId: number;
+  status: 'PENDING' | 'REQUESTED' | 'TREND_KEYWORD_DONE' | 'PRODUCT_SELECTED' |
+  'CONTENT_GENERATED' | 'BLOG_UPLOAD_PENDING' | 'COMPLETED' | 'FAILED';
+  postingUrl: string | null;
+  title: string | null;
+  content: string | null;
+  choiceTrendKeyword: string | null;
+  completedAt: string | null;
+  choiceProduct: string | null;
+}
+
+export interface WorkPageResponse {
+  works: Work[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+// 관리자용 Work 페이지 응답
+export interface AdminWorkPageResponse {
+  works: AdminWork[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+export interface WorkLogEntry {
+  stepName: string;
+  messages: string[];
+  status: string;
+  timestamp?: string;
+}
+
+export interface AdminWorkLogEntry {
+  logId: number;
+  stepNumber: number;
+  stepName: string;
+  logData: string;
+  status: string;
+  logLevel: string;
+  createdAt: string;
+}
+
+export const workService = {
+  // 워크플로우별 Work 목록 조회 (페이지네이션)
+  async getWorksByWorkflowId(
+    workflowId: number,
+    page: number = 0
+  ): Promise<ApiResponse<WorkPageResponse>> {
+    const response = await api.get(`/api/v1/work/${workflowId}?page=${page}`);
+    return response.data;
+  },
+
+  // 전체 Work 목록 조회 (관리자용) - 선택적 workflowId 필터링
+  async getWorksForAdmin(
+    page: number = 0,
+    workflowId?: number
+  ): Promise<ApiResponse<AdminWorkPageResponse>> {
+    const params = new URLSearchParams({ page: page.toString() });
+    if (workflowId !== undefined) {
+      params.append('workflowId', workflowId.toString());
+    }
+    const response = await api.get(`/api/v1/admin/work?${params.toString()}`);
+    return response.data;
+  },
+
+  // Work 삭제 (관리자용)
+  async deleteWork(workId: number): Promise<ApiResponse<void>> {
+    const response = await api.delete(`/api/v1/work/${workId}`);
+    return response.data;
+  },
+
+  async getWorkLogs(workId: number): Promise<ApiResponse<WorkLogEntry[]>> {
+    const response = await api.get(`/api/v1/work/${workId}/logs`);
+    return response.data;
+  },
+
+  // 단일 Work 조회 (사용자용)
+  async getWorkById(workId: number): Promise<ApiResponse<WorkDetailResponse>> {
+    const response = await api.get(`/api/v1/work/find/${workId}`);
+    return response.data;
+  },
+
+  async getAdminWorkLogs(workId: number): Promise<ApiResponse<AdminWorkLogEntry[]>> {
+    const response = await api.get(`/api/v1/admin/work/${workId}/logs`);
+    return response.data;
+  },
+};
